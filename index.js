@@ -39,23 +39,23 @@ OniyiLocker.prototype.lock = function(args) {
 	if (!_.isFunction(args.callback)) {
 		args.callback = _.noop;
 	}
-	if (!_.isString(args.key)) {
-		return args.callback(new TypeError('args.key must be a string'));
+	if (_.isUndefined(args.key)) {
+		return args.callback(new TypeError('args.key must be provided'));
 	}
 
 	if (!_.isNumber(args.expiresAfter)) {
 		args.expiresAfter = self.locksExpireAfter;
 	}
 
-	var lockKey = self.keyPefix + args.key;
+	var lockKey = self.keyPrefix + args.key;
 
-	var lockToken = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	var unlockToken = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 		var r = Math.random() * 16 | 0,
 			v = c === 'x' ? r : (r & 0x3 | 0x8);
 		return v.toString(16);
 	});
 
-	self.redisClient.set(lockKey, lockToken, 'PX', args.expiresAfter, 'NX', function(err, result) {
+	self.redisClient.set(lockKey, unlockToken, 'PX', args.expiresAfter, 'NX', function(err, result) {
 		if (err) {
 			return args.callback(err, null);
 		}
@@ -81,18 +81,18 @@ OniyiLocker.prototype.lock = function(args) {
 			client.on('message', function(channel, data) {
 				if (channel === lockKey) {
 					clearTimeout(timeout);
-					args.callback(null, data);
+					args.callback(null, JSON.parse(data));
 				}
 			});
 
 			return client.subscribe(lockKey);
 		}
 
-		logDebug('Aquired lock for {%s}, executing throttled request now', args.key);
+		logDebug('assigned lock for {%s}', args.key);
 		// pass the good news (incl. the unlock token) to our callback function
 		return args.callback(null, {
 			state: 'locked',
-			token: lockToken
+			token: unlockToken
 		});
 	});
 };
@@ -103,28 +103,28 @@ OniyiLocker.prototype.unlock = function(args) {
 	if (!_.isFunction(args.callback)) {
 		args.callback = _.noop;
 	}
-	if (!_.isString(args.key)) {
-		return args.callback(new TypeError('args.key must be a string'));
+	if (_.isUndefined(args.key)) {
+		return args.callback(new TypeError('args.key must be provided'));
 	}
 	if (!_.isString(args.token)) {
 		return args.callback(new TypeError('args.token must be a string'));
 	}
 
-	var lockKey = self.keyPefix + args.key;
+	var lockKey = self.keyPrefix + args.key;
 
 	self.redisClient.get(lockKey, function(err, lockedValue) {
 		if (err) {
 			return args.callback(err, null);
 		}
 		if (lockedValue === args.token) {
-			self.redisClient.del(lockKey, function(err, result) {
+			return self.redisClient.del(lockKey, function(err, result) {
 				if (err) {
 					return args.callback(err, null);
 				}
 				if (result === 1) {
-					self.redisClient.publish(lockKey, {
+					self.redisClient.publish(lockKey, JSON.stringify({
 						state: args.message
-					});
+					}));
 					return args.callback(null, 'unlocked');
 				}
 				return args.callback(new Error('No key was deleted'));
