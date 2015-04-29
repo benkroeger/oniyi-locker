@@ -1,6 +1,6 @@
 {
   "name": "oniyi-locker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The best module ever.",
   "author": {
     "name": "Benjamin Kroeger",
@@ -18,9 +18,8 @@
     "lock"
   ],
   "dependencies": {
-    "debug": "^2.1.2",
-    "lodash": "^3.5.0",
-    "make-redis-client": "0.0.3"
+    "lodash": "^3.7.0",
+    "make-redis-client": "0.0.4"
   },
   "devDependencies": {
     "grunt-cli": "^0.1.13",

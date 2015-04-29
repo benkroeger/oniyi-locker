@@ -2,25 +2,8 @@
 var assert = require('assert'),
 	util = require('util');
 
-var debug = require('debug'),
-	_ = require('lodash'),
+var _ = require('lodash'),
 	makeRedisClient = require('make-redis-client');
-
-// variables and functions
-var moduleName = 'oniyi-locker';
-
-
-var logError = debug(moduleName + ':error');
-// set this namespace to log via console.error
-logError.log = console.error.bind(console); // don't forget to bind to console!
-
-var logWarn = debug(moduleName + ':warn');
-// set all output to go via console.warn
-logWarn.log = console.warn.bind(console);
-
-var logDebug = debug(moduleName + ':debug');
-// set all output to go via console.warn
-logDebug.log = console.warn.bind(console);
 
 function OniyiLocker(args) {
 	var self = this;
@@ -31,6 +14,15 @@ function OniyiLocker(args) {
 
 	assert(self.redisOptions, '.redisOptions must be defined');
 	self.redisClient = makeRedisClient(self.redisOptions);
+}
+
+// Debugging
+OniyiLocker.debug = process.env.NODE_DEBUG && /\boniyi-locker\b/.test(process.env.NODE_DEBUG);
+
+function debug() {
+  if (OniyiLocker.debug) {
+    console.error('OniyiLocker %s', util.format.apply(util, arguments));
+  }
 }
 
 OniyiLocker.prototype.lock = function(args) {
@@ -62,13 +54,13 @@ OniyiLocker.prototype.lock = function(args) {
 		if (result === null) {
 			// lock is taken already
 
-			logDebug('Lock for {%s} is taken already', args.key);
+			debug('Lock for {%s} is taken already', args.key);
 
 			// make a redis client and subscribe to lock release
 			var client = makeRedisClient(self.redisOptions);
 
 			var timeout = setTimeout(function() {
-				logDebug('Waited %d milliseconds on lock release for %s, aborted', args.expiresAfter, args.key);
+				debug('Waited %d milliseconds on lock release for %s, aborted', args.expiresAfter, args.key);
 				client.unsubscribe();
 				client.end();
 				args.callback(null, {
@@ -88,7 +80,7 @@ OniyiLocker.prototype.lock = function(args) {
 			return client.subscribe(lockKey);
 		}
 
-		logDebug('assigned lock for {%s}', args.key);
+		debug('assigned lock for {%s}', args.key);
 		// pass the good news (incl. the unlock token) to our callback function
 		return args.callback(null, {
 			state: 'locked',
