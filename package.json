@@ -18,8 +18,8 @@
     "lock"
   ],
   "dependencies": {
-    "lodash": "^3.7.0",
-    "make-redis-client": "0.0.4"
+    "lodash": "^3.8.0",
+    "make-redis-client": "0.0.6"
   },
   "devDependencies": {
     "grunt-cli": "^0.1.13",
