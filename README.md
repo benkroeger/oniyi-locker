@@ -17,6 +17,10 @@ $ npm install --save oniyi-locker
 ## Usage
 coming soon!
 
+
+https://engineering.gosquared.com/distributed-locks-using-redis
+http://redis.io/topics/distlock
+
 ## License
 
 MIT © [Benjamin Kroeger]()
