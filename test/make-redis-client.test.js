@@ -9,7 +9,7 @@ test.before('prepare mockery for ioredis', () => {
     warnOnReplace: true,
     warnOnUnregistered: false,
   });
-  // mockery.registerAllowables(['util', 'lodash', 'oniyi-logger', './logger']);
+  // mockery.registerAllowables(['util', 'lodash', 'oniyi-logger']);
 
   // use mockery to overload dependency `ioredis` with our mock from the fixtures folder
   mockery.registerSubstitute('ioredis', require.resolve('./fixtures/ioredis-mock'));
