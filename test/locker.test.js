@@ -5,6 +5,7 @@ import test from 'ava';
 import _ from 'lodash';
 import oniyiLockerFactory from '../lib';
 import { InvalidParamsError, LockTimeoutError, MaxAttemptsReachedError, LockFailedError } from '../lib/errors';
+import { STATE_RELEASED_WITH_MESSAGE } from '../lib/constants';
 
 // https://gist.github.com/jed/982883#gistcomment-852670
 function uuid() {
@@ -84,6 +85,30 @@ test.cb('can not even double-acquire with max attempts', (t) => {
       t.throws(Promise.reject(secondLockErr), MaxAttemptsReachedError);
       t.end();
     });
+  });
+});
+
+test.cb('second lock can be acquired with multiple attempts after first is released', (t) => {
+  const { locker } = t.context;
+  const key = uuid();
+  const expiresAfter = 10000;
+  const maxWait = 3000;
+
+  locker.lock({ key, expiresAfter }, (firstLockErr, firstResult) => {
+    if (firstLockErr) {
+      t.fail('failed to acquire first lock');
+      t.end();
+      return;
+    }
+
+    const { token } = firstResult;
+    locker.lock({ key, maxWait, reuseData: true }, (secondLockErr, secondResult) => {
+      t.true(secondResult && secondResult.state === STATE_RELEASED_WITH_MESSAGE);
+      t.end();
+    });
+
+    // postpone unlocking by 500 ms
+    setTimeout(() => { locker.unlock({ key, token }, _.noop); }, 500);
   });
 });
 
