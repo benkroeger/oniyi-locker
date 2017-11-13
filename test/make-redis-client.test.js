@@ -1,7 +1,10 @@
-'use strict';
+// node core modules
 
+// 3rd party modules
 import test from 'ava';
 import mockery from 'mockery';
+
+// internal modules
 
 test.before('prepare mockery for ioredis', () => {
   mockery.enable({
@@ -20,7 +23,9 @@ test.after('disable mockery', () => {
 });
 
 test('make ioredis standalone client', (t) => {
+  // eslint-disable-next-line global-require
   const ioredisMock = require('./fixtures/ioredis-mock');
+  // eslint-disable-next-line global-require
   const makeRedisClient = require('../lib/make-redis-client');
 
   const client = makeRedisClient({});
@@ -28,7 +33,9 @@ test('make ioredis standalone client', (t) => {
 });
 
 test('make ioredis cluster client', (t) => {
+  // eslint-disable-next-line global-require
   const ioredisMock = require('./fixtures/ioredis-mock');
+  // eslint-disable-next-line global-require
   const makeRedisClient = require('../lib/make-redis-client');
 
   const startupNodes = [];

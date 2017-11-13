@@ -1,19 +1,19 @@
-'use strict';
-
+// node core modules
 import crypto from 'crypto';
+
+// 3rd party modules
 import test from 'ava';
 import _ from 'lodash';
+
+// internal modules
 import oniyiLockerFactory from '../lib';
 import { InvalidParamsError, LockTimeoutError, MaxAttemptsReachedError, LockFailedError } from '../lib/errors';
 import { STATE_RELEASED_WITH_MESSAGE } from '../lib/constants';
 
 // https://gist.github.com/jed/982883#gistcomment-852670
-function uuid() {
-  /* eslint-disable no-bitwise, no-mixed-operators */
-  return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11)
-    .replace(/[018]/g, a => (a ^ crypto.randomBytes(1)[0] >> a / 4).toString(16));
-  /* eslint-enable */
-}
+const uuid = () =>
+  // eslint-disable-next-line no-bitwise, no-mixed-operators
+  ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, a => (a ^ (crypto.randomBytes(1)[0] >> (a / 4))).toString(16));
 
 test.beforeEach((t) => {
   const locker = oniyiLockerFactory();
@@ -39,53 +39,41 @@ test.cb('lock with valid key', (t) => {
   });
 });
 
-test.cb('lock with invalid key', (t) => {
+test('lock with invalid key', async (t) => {
   const { locker } = t.context;
   const key = 1234;
 
-  locker.lock({ key }, (lockErr) => {
-    t.throws(Promise.reject(lockErr), InvalidParamsError);
-    t.end();
-  });
+  const promise = new Promise((resolve, reject) => locker.lock({ key }, reject));
+  await t.throws(promise, InvalidParamsError);
 });
 
-test.cb('can not double-acquire lock within expires time', (t) => {
+test('can not double-acquire lock within expires time', async (t) => {
   const { locker } = t.context;
   const key = uuid();
   const expiresAfter = 10000;
   const maxWait = 1000;
-  locker.lock({ key, expiresAfter }, (firstLockErr) => {
-    if (firstLockErr) {
-      t.fail('failed to acquire first lock');
-      t.end();
-      return;
-    }
+  const promise = new Promise((resolve, reject) => locker.lock({ key, expiresAfter }, (firstLockErr) => {
+    t.ifError(firstLockErr);
 
-    locker.lock({ key, maxWait }, (secondLockErr) => {
-      t.throws(Promise.reject(secondLockErr), LockFailedError);
-      t.end();
-    });
-  });
+    locker.lock({ key, maxWait }, reject);
+  }));
+
+  await t.throws(promise, LockFailedError);
 });
 
-test.cb('can not even double-acquire with max attempts', (t) => {
+test('can not even double-acquire with max attempts', async (t) => {
   const { locker } = t.context;
   const key = uuid();
   const expiresAfter = 10000;
   const maxWait = 1000;
   const maxAttempts = 3;
-  locker.lock({ key, expiresAfter }, (firstLockErr) => {
-    if (firstLockErr) {
-      t.fail('failed to acquire first lock');
-      t.end();
-      return;
-    }
+  const promise = new Promise((resolve, reject) => locker.lock({ key, expiresAfter }, (firstLockErr) => {
+    t.ifError(firstLockErr);
 
-    locker.lock({ key, maxWait, maxAttempts }, (secondLockErr) => {
-      t.throws(Promise.reject(secondLockErr), MaxAttemptsReachedError);
-      t.end();
-    });
-  });
+    locker.lock({ key, maxWait, maxAttempts }, reject);
+  }));
+
+  await t.throws(promise, MaxAttemptsReachedError);
 });
 
 test.cb('second lock can be acquired with multiple attempts after first is released', (t) => {
@@ -95,20 +83,19 @@ test.cb('second lock can be acquired with multiple attempts after first is relea
   const maxWait = 3000;
 
   locker.lock({ key, expiresAfter }, (firstLockErr, firstResult) => {
-    if (firstLockErr) {
-      t.fail('failed to acquire first lock');
-      t.end();
-      return;
-    }
+    t.ifError(firstLockErr);
 
     const { token } = firstResult;
     locker.lock({ key, maxWait, reuseData: true }, (secondLockErr, secondResult) => {
+      t.ifError(secondLockErr);
       t.true(secondResult && secondResult.state === STATE_RELEASED_WITH_MESSAGE);
       t.end();
     });
 
     // postpone unlocking by 500 ms
-    setTimeout(() => { locker.unlock({ key, token }, _.noop); }, 500);
+    setTimeout(() => {
+      locker.unlock({ key, token }, _.noop);
+    }, 500);
   });
 });
 
@@ -120,33 +107,32 @@ test.cb('second lock receives data from unlock event', (t) => {
   const message = { foo: 'bar' };
 
   locker.lock({ key, expiresAfter }, (firstLockErr, firstResult) => {
+    t.ifError(firstLockErr);
     const { token } = firstResult;
     locker.lock({ key, maxWait, reuseData: true }, (secondLockErr, secondResult) => {
+      t.ifError(secondLockErr);
       t.deepEqual(secondResult.message, message);
       t.end();
     });
 
     // postpone unlocking by 500 ms
-    setTimeout(() => { locker.unlock({ key, token, message }, _.noop); }, 500);
+    setTimeout(() => {
+      locker.unlock({ key, token, message }, _.noop);
+    }, 500);
   });
 });
 
-test.cb('second lock times out while waiting to reuse data', (t) => {
+test('second lock times out while waiting to reuse data', async (t) => {
   const { locker } = t.context;
   const key = uuid();
   const expiresAfter = 10000;
   const maxWait = 1000;
 
-  locker.lock({ key, expiresAfter }, (firstLockErr) => {
-    if (firstLockErr) {
-      t.fail('failed to acquire first lock');
-      t.end();
-      return;
-    }
+  const promise = new Promise((resolve, reject) => locker.lock({ key, expiresAfter }, (firstLockErr) => {
+    t.ifError(firstLockErr);
 
-    locker.lock({ key, maxWait, reuseData: true }, (secondLockErr) => {
-      t.throws(Promise.reject(secondLockErr), LockTimeoutError);
-      t.end();
-    });
-  });
+    locker.lock({ key, maxWait, reuseData: true }, reject);
+  }));
+
+  await t.throws(promise, LockTimeoutError);
 });

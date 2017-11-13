@@ -1,5 +1,3 @@
-'use strict';
-
 // node core modules
 const util = require('util');
 
@@ -16,5 +14,5 @@ util.inherits(IORedisClientMock, RedisClientMock);
 function IORedisClusterMock() {}
 util.inherits(IORedisClusterMock, RedisClientMock);
 
-exports = module.exports = IORedisClientMock;
-exports.Cluster = IORedisClusterMock;
+IORedisClientMock.Cluster = IORedisClusterMock;
+module.exports = IORedisClientMock;
