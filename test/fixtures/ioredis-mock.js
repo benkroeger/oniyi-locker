@@ -1,3 +1,5 @@
+'use strict';
+
 // node core modules
 const util = require('util');
 

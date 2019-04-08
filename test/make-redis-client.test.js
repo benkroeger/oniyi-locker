@@ -15,24 +15,30 @@ test.before('prepare mockery for ioredis', () => {
   // mockery.registerAllowables(['util', 'lodash', 'oniyi-logger']);
 
   // use mockery to overload dependency `ioredis` with our mock from the fixtures folder
-  mockery.registerSubstitute('ioredis', require.resolve('./fixtures/ioredis-mock'));
+  mockery.registerSubstitute(
+    'ioredis',
+    require.resolve('./fixtures/ioredis-mock'),
+  );
 });
 
 test.after('disable mockery', () => {
   mockery.disable();
 });
 
-test('make ioredis standalone client', (t) => {
+test('make ioredis standalone client', t => {
   // eslint-disable-next-line global-require
   const ioredisMock = require('./fixtures/ioredis-mock');
   // eslint-disable-next-line global-require
   const makeRedisClient = require('../lib/make-redis-client');
 
   const client = makeRedisClient({});
-  t.true(client instanceof ioredisMock, 'client is not instance of basic ioredis client');
+  t.true(
+    client instanceof ioredisMock,
+    'client is not instance of basic ioredis client',
+  );
 });
 
-test('make ioredis cluster client', (t) => {
+test('make ioredis cluster client', t => {
   // eslint-disable-next-line global-require
   const ioredisMock = require('./fixtures/ioredis-mock');
   // eslint-disable-next-line global-require
@@ -47,7 +53,10 @@ test('make ioredis cluster client', (t) => {
     cluster,
   });
 
-  t.true(client instanceof ioredisMock.Cluster, 'client is not instance of cluster ioredis client');
+  t.true(
+    client instanceof ioredisMock.Cluster,
+    'client is not instance of cluster ioredis client',
+  );
 });
 
 /* eslint-disable ava/no-todo-test */
