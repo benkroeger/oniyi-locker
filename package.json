@@ -1,6 +1,6 @@
 {
   "name": "oniyi-locker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "The best module ever.",
   "author": {
     "name": "Benjamin Kroeger",
@@ -21,7 +21,7 @@
   "dependencies": {
     "async": "2.6.2",
     "ioredis": "3.2.1",
-    "lodash": "4.17.11",
+    "lodash": "4.17.15",
     "oniyi-logger": "1.0.0"
   },
   "devDependencies": {
