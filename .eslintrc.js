@@ -17,11 +17,7 @@ module.exports = {
     jest: true,
     node: true,
   },
-  plugins: ['prettier'],
-  extends: ['airbnb-base', 'prettier'],
-  rules: {
-    'prettier/prettier': 'error',
-  },
+  extends: ['airbnb-base', 'plugin:prettier/recommended'],
   overrides: [
     {
       files: ['**/*.test.js'],
